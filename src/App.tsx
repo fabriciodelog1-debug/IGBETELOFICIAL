@@ -56,8 +56,11 @@ import {
 // @ts-ignore
 import FOTO_IGREJA_DEFAULT from "./assets/images/foto_igreja_betel_real_1782324243852.jpg";
 
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
+
 /* ======================================================================
-   INTERFACE E CONFIGURAÇÃO DE PERSISTÊNCIA (AI Studio Storage / LocalStorage)
+   INTERFACE E CONFIGURAÇÃO DE PERSISTÊNCIA (AI Studio Storage / LocalStorage / Firestore)
    ====================================================================== */
 
 interface StorageResult {
@@ -75,10 +78,45 @@ declare global {
   }
 }
 
-// Fallback robusto para localStorage caso window.storage não esteja injetado no ambiente
-if (typeof window !== "undefined" && !window.storage) {
+// Força o uso do Firestore para dados compartilhados do aplicativo em qualquer ambiente (Editor ou Celular)
+if (typeof window !== "undefined") {
+  const originalStorage = window.storage;
   window.storage = {
-    get: async (key: string, _shared: boolean) => {
+    get: async (key: string, shared: boolean) => {
+      // Se for a chave principal de dados (ou marcado como compartilhado), busca do Firestore na nuvem
+      if (shared || key === STORAGE_KEY) {
+        try {
+          const docRef = doc(db, "dados_app", key);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            return { value: data?.value || null };
+          }
+        } catch (e) {
+          console.error("Erro ao buscar dados do Firestore, usando fallback local:", e);
+        }
+        // Fallback local se estiver offline ou sem internet
+        if (originalStorage) {
+          try {
+            const res = await originalStorage.get(key, shared);
+            if (res && res.value) return res;
+          } catch (e) {}
+        }
+        try {
+          const val = localStorage.getItem(key);
+          return { value: val };
+        } catch (e) {
+          return { value: null };
+        }
+      }
+
+      // Para chaves locais (ex: betel:meu_cadastro_id), usa o storage local do aparelho
+      if (originalStorage) {
+        try {
+          const res = await originalStorage.get(key, shared);
+          if (res) return res;
+        } catch (e) {}
+      }
       try {
         const val = localStorage.getItem(key);
         return { value: val };
@@ -86,11 +124,27 @@ if (typeof window !== "undefined" && !window.storage) {
         return { value: null };
       }
     },
-    set: async (key: string, value: string, _shared: boolean) => {
+    set: async (key: string, value: string, shared: boolean) => {
+      // Salva em cache local do aparelho (localStorage)
       try {
         localStorage.setItem(key, value);
-      } catch (e) {
-        console.error("Erro ao salvar no localStorage:", e);
+      } catch (e) {}
+
+      // Se for a chave principal de dados (ou marcado como compartilhado), salva no Firestore na nuvem
+      if (shared || key === STORAGE_KEY) {
+        try {
+          const docRef = doc(db, "dados_app", key);
+          await setDoc(docRef, { value });
+        } catch (e) {
+          console.error("Erro ao salvar dados no Firestore:", e);
+        }
+        if (originalStorage) {
+          await originalStorage.set(key, value, shared).catch(() => {});
+        }
+      } else {
+        if (originalStorage) {
+          await originalStorage.set(key, value, shared).catch(() => {});
+        }
       }
     }
   };
@@ -612,6 +666,7 @@ interface TelaInicioProps {
   onEditarMeuCadastro: (m: Membro) => void;
   onExcluirMeuCadastro: () => void;
   totalMembros: number;
+  linksAoVivo?: Record<string, string>;
 }
 
 function TelaInicio({
@@ -623,6 +678,7 @@ function TelaInicio({
   onEditarMeuCadastro,
   onExcluirMeuCadastro,
   totalMembros,
+  linksAoVivo,
 }: TelaInicioProps) {
   const inputIgrejaRef = useRef<HTMLInputElement>(null);
 
@@ -635,6 +691,29 @@ function TelaInicio({
         <p className="text-2xl font-extrabold relative z-10 font-sans">Igreja Betel</p>
         <p className="text-xs text-gray-400 mt-1 relative z-10 font-mono">Eunápolis - BA</p>
       </div>
+
+      {linksAoVivo?.youtube && (
+        <a
+          href={linksAoVivo.youtube.startsWith("http") ? linksAoVivo.youtube : `https://${linksAoVivo.youtube}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white rounded-2xl p-4 shadow-md animate-pulse active:scale-98 transition-transform border border-red-500"
+        >
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            </span>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-red-100">Transmissão Ativa</p>
+              <h4 className="font-extrabold text-sm font-sans">Culto Ao Vivo no YouTube</h4>
+            </div>
+          </div>
+          <span className="bg-white/20 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1 shrink-0 font-sans">
+            <Youtube size={14} /> Assistir Agora
+          </span>
+        </a>
+      )}
 
       {/* BANNER DE AUTOCADASTRO OU EXIBIÇÃO DA FICHA DE MEMBRO */}
       {meuMembro ? (
@@ -2055,6 +2134,10 @@ function CanalAoVivo({ chave, titulo, icon: Icon, links, atualizarLink }: CanalA
   const [rascunho, setRascunho] = useState("");
   const link = links[chave] || "";
 
+  useEffect(() => {
+    setRascunho(link);
+  }, [link]);
+
   const salvarLink = () => {
     atualizarLink(chave, rascunho.trim());
     setEditando(false);
@@ -2062,60 +2145,55 @@ function CanalAoVivo({ chave, titulo, icon: Icon, links, atualizarLink }: CanalA
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-3">
-      <div className="flex items-center gap-2">
-        <Icon size={18} className="text-red-700" />
-        <p className="font-extrabold text-gray-900 text-sm font-sans">{titulo}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon size={18} className="text-red-700" />
+          <p className="font-extrabold text-gray-900 text-sm font-sans">{titulo}</p>
+        </div>
         <button
-          onClick={() => {
-            setRascunho(link);
-            setEditando(true);
-          }}
-          aria-label={`Editar link de ${titulo}`}
-          className="ml-auto"
+          onClick={() => setEditando(!editando)}
+          className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-red-700 font-sans transition-colors"
         >
-          <Pencil size={16} className="text-gray-400" />
+          <Pencil size={14} />
+          {editando ? "Cancelar" : "Editar Link"}
         </button>
       </div>
 
-      {link ? (
+      {editando ? (
+        <div className="space-y-2 pt-1">
+          <input
+            value={rascunho}
+            onChange={(e) => setRascunho(e.target.value)}
+            placeholder={`Cole aqui o link de ${titulo} (ex: https://youtube.com/...)`}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 font-sans"
+          />
+          <button
+            onClick={salvarLink}
+            className="w-full bg-red-700 hover:bg-red-800 text-white font-extrabold py-2.5 rounded-xl text-xs font-sans transition-colors"
+          >
+            Salvar Link
+          </button>
+        </div>
+      ) : link ? (
         <a
           href={link}
           target="_blank"
           rel="noopener noreferrer"
-          className="block bg-red-700 hover:bg-red-800 text-white rounded-xl py-3 text-center font-extrabold text-sm font-sans"
+          className="block bg-red-700 hover:bg-red-800 text-white rounded-xl py-2.5 text-center font-extrabold text-sm font-sans transition-colors"
         >
-          Assistir/ouvir agora
+          Assistir/ouvir {titulo} agora
         </a>
       ) : (
-        <p className="text-xs text-gray-400 font-sans">
-          Nenhum link cadastrado ainda — toque no lápis pra colar o link.
-        </p>
-      )}
-
-      {editando && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white w-full max-w-sm rounded-t-3xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-lg text-gray-900 font-sans">
-                Link — {titulo}
-              </h3>
-              <button onClick={() => setEditando(false)} aria-label="Fechar">
-                <X size={22} className="text-gray-500" />
-              </button>
-            </div>
-            <input
-              value={rascunho}
-              onChange={(e) => setRascunho(e.target.value)}
-              placeholder={`Cole aqui o link de ${titulo}`}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 font-sans"
-            />
-            <button
-              onClick={salvarLink}
-              className="w-full mt-4 bg-red-700 text-white font-extrabold py-3 rounded-xl font-sans"
-            >
-              Salvar link
-            </button>
-          </div>
+        <div className="bg-gray-50 rounded-xl p-3 text-center border border-dashed border-gray-200">
+          <p className="text-xs text-gray-500 font-sans">
+            Nenhum link cadastrado para {titulo} ainda.
+          </p>
+          <button
+            onClick={() => setEditando(true)}
+            className="mt-1.5 text-xs font-extrabold text-red-700 hover:underline font-sans"
+          >
+            Adicionar link
+          </button>
         </div>
       )}
     </div>
@@ -2326,6 +2404,66 @@ function TelaEscala({ escalas, atualizarEscala }: TelaEscalaProps) {
         Escreva o nome de quem vai servir em cada função esta semana. Salva
         sozinho quando você sai do campo.
       </p>
+
+      {(selecionado === "louvor" || selecionado === "danca") && (
+        <div className="bg-gradient-to-br from-red-50 to-white border border-red-200 rounded-2xl p-4 shadow-sm space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-red-700 text-white flex items-center justify-center shrink-0">
+              {selecionado === "louvor" ? <Music size={16} /> : <Sparkles size={16} />}
+            </span>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide font-sans">
+                {selecionado === "louvor" ? "Repertório Musical" : "Ensaios & Coreografias"}
+              </p>
+              <h4 className="font-extrabold text-gray-900 text-sm font-sans">
+                {selecionado === "louvor" ? "Links das Músicas / Cifras (6 Espaços)" : "Links dos Vídeos / Coreografias (6 Espaços)"}
+              </h4>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5, 6].map((num) => {
+              const chaveLink = `link_repertorio_${num}`;
+              const linkAtual = valores[chaveLink] || "";
+              const ehYoutube = linkAtual.toLowerCase().includes("youtube.com") || linkAtual.toLowerCase().includes("youtu.be");
+
+              return (
+                <div key={num} className="bg-white border border-gray-200 rounded-xl p-3 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full font-sans uppercase">
+                      {selecionado === "louvor" ? `Música ${num}` : `Coreografia ${num}`}
+                    </span>
+                    {linkAtual ? (
+                      <a
+                        href={linkAtual.startsWith("http") ? linkAtual : `https://${linkAtual}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs font-bold text-red-700 hover:text-red-800 transition-colors bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg"
+                      >
+                        {ehYoutube ? <Youtube size={12} className="text-red-600" /> : <ExternalLink size={12} />}
+                        <span>Assistir / Ouvir</span>
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 italic font-sans">Sem link</span>
+                    )}
+                  </div>
+                  <input
+                    value={linkAtual}
+                    onChange={(e) => mudarCampo(chaveLink, e.target.value)}
+                    onBlur={salvarCampo}
+                    placeholder={
+                      selecionado === "louvor"
+                        ? `Cole o link da Música ${num} (YouTube, Spotify, Cifra)`
+                        : `Cole o link da Coreografia ${num} (YouTube, Drive, etc)`
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-700 font-sans"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
         {ministerio.funcoes.map((funcao) => (
@@ -2674,6 +2812,7 @@ export default function App() {
             onEditarMeuCadastro={handleEditarMeuCadastro}
             onExcluirMeuCadastro={() => setConfirmarRemoverLocal(true)}
             totalMembros={dados.membros?.length || 0}
+            linksAoVivo={dados.linksAoVivo}
           />
         );
       case "cultos":
@@ -2731,6 +2870,7 @@ export default function App() {
             onEditarMeuCadastro={handleEditarMeuCadastro}
             onExcluirMeuCadastro={() => setConfirmarRemoverLocal(true)}
             totalMembros={dados.membros?.length || 0}
+            linksAoVivo={dados.linksAoVivo}
           />
         );
     }

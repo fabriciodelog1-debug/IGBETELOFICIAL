@@ -176,63 +176,214 @@ function dadosPadrao(): DadosApp {
   };
 }
 
-function mesclarDados(local: DadosApp, remoto: DadosApp): DadosApp {
-  const mesclarColecao = <T extends { id: number }>(locais: T[], remotos: T[]): T[] => {
-    const mapa = new Map<number, T>();
-    if (Array.isArray(remotos)) {
-      remotos.forEach((item) => {
-        if (item && typeof item.id === "number") mapa.set(item.id, item);
-      });
-    }
-    if (Array.isArray(locais)) {
-      locais.forEach((item) => {
-        if (item && typeof item.id === "number") mapa.set(item.id, item);
-      });
-    }
-    return Array.from(mapa.values());
-  };
+function mesclarValor<T>(local: T, remoto: T, base: T): T {
+  if (local === base) {
+    return remoto;
+  }
+  return local;
+}
 
-  const membrosMesclados = mesclarColecao(local.membros || [], remoto.membros || []).sort(
-    (a, b) => b.id - a.id
-  );
+function mesclarRecordSimples(
+  local: Record<string, string>,
+  remoto: Record<string, string>,
+  base: Record<string, string>
+): Record<string, string> {
+  const chaves = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(remoto || {}),
+    ...Object.keys(local || {})
+  ]);
+  const resultado: Record<string, string> = {};
+  chaves.forEach((key) => {
+    const valBase = base?.[key] || "";
+    const valRemoto = remoto?.[key] || "";
+    const valLocal = local?.[key] || "";
+    resultado[key] = mesclarValor(valLocal, valRemoto, valBase);
+  });
+  return resultado;
+}
+
+function mesclarEscalas(
+  local: Record<string, Record<string, string>>,
+  remoto: Record<string, Record<string, string>>,
+  base: Record<string, Record<string, string>>
+): Record<string, Record<string, string>> {
+  const ministerios = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(remoto || {}),
+    ...Object.keys(local || {})
+  ]);
+  const resultado: Record<string, Record<string, string>> = {};
+  ministerios.forEach((mId) => {
+    resultado[mId] = mesclarRecordSimples(
+      local?.[mId] || {},
+      remoto?.[mId] || {},
+      base?.[mId] || {}
+    );
+  });
+  return resultado;
+}
+
+function mesclarRedes(
+  local: Record<string, RedeSocial>,
+  remoto: Record<string, RedeSocial>,
+  base: Record<string, RedeSocial>
+): Record<string, RedeSocial> {
+  const chaves = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(remoto || {}),
+    ...Object.keys(local || {})
+  ]);
+  const resultado: Record<string, RedeSocial> = {};
+  chaves.forEach((key) => {
+    const b = base?.[key] || { foto: null, descricao: "" };
+    const r = remoto?.[key] || { foto: null, descricao: "" };
+    const l = local?.[key] || { foto: null, descricao: "" };
+
+    resultado[key] = {
+      foto: mesclarValor(l.foto, r.foto, b.foto),
+      descricao: mesclarValor(l.descricao, r.descricao, b.descricao),
+    };
+  });
+  return resultado;
+}
+
+function mesclarMinistrantes(
+  local: Record<string, Ministrante>,
+  remoto: Record<string, Ministrante>,
+  base: Record<string, Ministrante>
+): Record<string, Ministrante> {
+  const chaves = new Set([
+    ...Object.keys(base || {}),
+    ...Object.keys(remoto || {}),
+    ...Object.keys(local || {})
+  ]);
+  const resultado: Record<string, Ministrante> = {};
+  chaves.forEach((key) => {
+    const b = base?.[key] || { nome: "", foto: null };
+    const r = remoto?.[key] || { nome: "", foto: null };
+    const l = local?.[key] || { nome: "", foto: null };
+
+    resultado[key] = {
+      nome: mesclarValor(l.nome, r.nome, b.nome),
+      foto: mesclarValor(l.foto, r.foto, b.foto),
+    };
+  });
+  return resultado;
+}
+
+function mesclarLista<T extends { id: number }>(
+  local: T[],
+  remoto: T[],
+  base: T[]
+): T[] {
+  const lMap = new Map(local.map((item) => [item.id, item]));
+  const rMap = new Map(remoto.map((item) => [item.id, item]));
+  const bMap = new Map(base.map((item) => [item.id, item]));
+
+  const todosIds = new Set([
+    ...lMap.keys(),
+    ...rMap.keys(),
+    ...bMap.keys()
+  ]);
+
+  const resultado: T[] = [];
+
+  todosIds.forEach((id) => {
+    const emLocal = lMap.has(id);
+    const emRemoto = rMap.has(id);
+    const emBase = bMap.has(id);
+
+    const itemLocal = lMap.get(id);
+    const itemRemoto = rMap.get(id);
+    const itemBase = bMap.get(id);
+
+    if (emBase) {
+      if (emLocal && emRemoto) {
+        // Exists in all three
+        const alteradoLocal = JSON.stringify(itemLocal) !== JSON.stringify(itemBase);
+        const alteradoRemoto = JSON.stringify(itemRemoto) !== JSON.stringify(itemBase);
+
+        if (alteradoLocal && !alteradoRemoto) {
+          resultado.push(itemLocal!);
+        } else if (alteradoRemoto && !alteradoLocal) {
+          resultado.push(itemRemoto!);
+        } else {
+          resultado.push(itemLocal!);
+        }
+      } else if (!emLocal && emRemoto) {
+        // Deleted locally
+        const alteradoRemoto = JSON.stringify(itemRemoto) !== JSON.stringify(itemBase);
+        if (alteradoRemoto) {
+          resultado.push(itemRemoto!);
+        }
+      } else if (emLocal && !emRemoto) {
+        // Deleted remotely
+        const alteradoLocal = JSON.stringify(itemLocal) !== JSON.stringify(itemBase);
+        if (alteradoLocal) {
+          resultado.push(itemLocal!);
+        }
+      }
+    } else {
+      // Newly added
+      if (emLocal && emRemoto) {
+        resultado.push(itemLocal!);
+      } else if (emLocal) {
+        resultado.push(itemLocal!);
+      } else if (emRemoto) {
+        resultado.push(itemRemoto!);
+      }
+    }
+  });
+
+  return resultado;
+}
+
+function mesclarTresCaminhos(
+  local: DadosApp,
+  remoto: DadosApp,
+  base: DadosApp
+): DadosApp {
+  const fotoIgreja = mesclarValor(local.fotoIgreja, remoto.fotoIgreja, base.fotoIgreja);
   
-  const visitantesMesclados = mesclarColecao(local.visitantes || [], remoto.visitantes || []).sort(
-    (a, b) => b.id - a.id
-  );
-
-  const licoesMescladas = mesclarColecao(local.licoes || [], remoto.licoes || []).sort(
-    (a, b) => b.id - a.id
-  );
-
-  const gruposMesclados = mesclarColecao(local.grupos || [], remoto.grupos || []).sort(
-    (a, b) => b.id - a.id
-  );
-
-  const redesMescladas = { ...(remoto.redes || {}), ...(local.redes || {}) };
-  const escalasMescladas = { ...(remoto.escalas || {}), ...(local.escalas || {}) };
-  const ministrantesMesclados = { ...(remoto.ministrantes || {}), ...(local.ministrantes || {}) };
-
-  const linksAoVivoMesclados = {
-    youtube: local.linksAoVivo?.youtube !== REDES_SOCIAIS.youtube ? (local.linksAoVivo?.youtube || remoto.linksAoVivo?.youtube) : (remoto.linksAoVivo?.youtube || local.linksAoVivo?.youtube),
-    radio: local.linksAoVivo?.radio || remoto.linksAoVivo?.radio || "",
-    tvweb: local.linksAoVivo?.tvweb || remoto.linksAoVivo?.tvweb || "",
+  const linksAoVivo = {
+    youtube: mesclarValor(local.linksAoVivo?.youtube || "", remoto.linksAoVivo?.youtube || "", base.linksAoVivo?.youtube || ""),
+    radio: mesclarValor(local.linksAoVivo?.radio || "", remoto.linksAoVivo?.radio || "", base.linksAoVivo?.radio || ""),
+    tvweb: mesclarValor(local.linksAoVivo?.tvweb || "", remoto.linksAoVivo?.tvweb || "", base.linksAoVivo?.tvweb || ""),
   };
 
-  const fotoIgrejaMesclada = 
-    local.fotoIgreja && local.fotoIgreja !== FOTO_IGREJA_DEFAULT 
-      ? local.fotoIgreja 
-      : (remoto.fotoIgreja || local.fotoIgreja);
+  const grupos = mesclarLista(local.grupos || [], remoto.grupos || [], base.grupos || []).sort(
+    (a, b) => b.id - a.id
+  );
+
+  const redes = mesclarRedes(local.redes || {}, remoto.redes || {}, base.redes || {});
+
+  const escalas = mesclarEscalas(local.escalas || {}, remoto.escalas || {}, base.escalas || {});
+
+  const visitantes = mesclarLista(local.visitantes || [], remoto.visitantes || [], base.visitantes || []).sort(
+    (a, b) => b.id - a.id
+  );
+
+  const licoes = mesclarLista(local.licoes || [], remoto.licoes || [], base.licoes || []).sort(
+    (a, b) => b.id - a.id
+  );
+
+  const ministrantes = mesclarMinistrantes(local.ministrantes || {}, remoto.ministrantes || {}, base.ministrantes || {});
+
+  const membros = mesclarLista(local.membros || [], remoto.membros || [], base.membros || []).sort(
+    (a, b) => b.id - a.id
+  );
 
   return {
-    fotoIgreja: fotoIgrejaMesclada,
-    linksAoVivo: linksAoVivoMesclados,
-    grupos: gruposMesclados,
-    redes: redesMescladas,
-    escalas: escalasMescladas,
-    visitantes: visitantesMesclados,
-    licoes: licoesMescladas,
-    ministrantes: ministrantesMesclados,
-    membros: membrosMesclados,
+    fotoIgreja,
+    linksAoVivo,
+    grupos,
+    redes,
+    escalas,
+    visitantes,
+    licoes,
+    ministrantes,
+    membros,
   };
 }
 
@@ -2263,6 +2414,7 @@ export default function App() {
   const [tela, setTela] = useState("inicio");
   const [dados, setDados] = useState<DadosApp>(dadosPadrao());
   const dadosRef = useRef<DadosApp>(dadosPadrao());
+  const ultimoEstadoSincronizadoRef = useRef<DadosApp>(dadosPadrao());
   const [carregado, setCarregado] = useState(false);
   const [statusSalvar, setStatusSalvar] = useState<string | null>(null);
   const [ultimaVisualizacaoMembros, setUltimaVisualizacaoMembros] = useState(0);
@@ -2300,12 +2452,13 @@ export default function App() {
           };
 
           const dadosAtuais = dadosRef.current;
-          const novosMesclados = mesclarDados(dadosAtuais, remoto);
+          const novosMesclados = mesclarTresCaminhos(dadosAtuais, remoto, ultimoEstadoSincronizadoRef.current);
           
           if (JSON.stringify(dadosAtuais) !== JSON.stringify(novosMesclados)) {
             dadosRef.current = novosMesclados;
             setDados(novosMesclados);
           }
+          ultimoEstadoSincronizadoRef.current = remoto;
         }
       } catch (err) {
         // Silencioso em caso de erro de rede temporário
@@ -2328,6 +2481,7 @@ export default function App() {
             membros: Array.isArray(parsed.membros) ? parsed.membros : [],
           };
           dadosRef.current = carregados;
+          ultimoEstadoSincronizadoRef.current = carregados;
           setDados(carregados);
         }
       } catch (err) {
@@ -2362,9 +2516,10 @@ export default function App() {
       // 1. Busca os dados remotos mais recentes para fazer um merge e evitar sobrescrever cadastros de terceiros
       let dadosFinais = novosDados;
       const resultado = await window.storage.get(STORAGE_KEY, true);
+      let remoto: DadosApp | null = null;
       if (resultado && resultado.value) {
         const parsed = JSON.parse(resultado.value);
-        const remoto: DadosApp = {
+        remoto = {
           ...dadosPadrao(),
           ...parsed,
           grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
@@ -2372,15 +2527,23 @@ export default function App() {
           licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
           membros: Array.isArray(parsed.membros) ? parsed.membros : [],
         };
-        dadosFinais = mesclarDados(novosDados, remoto);
+        dadosFinais = mesclarTresCaminhos(novosDados, remoto, ultimoEstadoSincronizadoRef.current);
       }
 
       // 2. Atualiza o estado local e de referência
       dadosRef.current = dadosFinais;
       setDados(dadosFinais);
+      if (remoto) {
+        ultimoEstadoSincronizadoRef.current = remoto;
+      } else {
+        ultimoEstadoSincronizadoRef.current = dadosFinais;
+      }
 
       // 3. Grava de forma segura na nuvem compartilhada
       await window.storage.set(STORAGE_KEY, JSON.stringify(dadosFinais), true);
+      
+      // Atualiza a base para o estado final gravado com sucesso
+      ultimoEstadoSincronizadoRef.current = dadosFinais;
       setStatusSalvar("ok");
     } catch (err) {
       console.error("Não foi possível salvar os dados do app", err);

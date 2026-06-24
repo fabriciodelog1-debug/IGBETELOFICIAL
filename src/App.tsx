@@ -525,12 +525,21 @@ function TelaInicio({
 
       <div>
         <Selo>Foto da igreja</Selo>
-        <FotoUpload
-          foto={fotoIgreja}
-          onTrocar={onTrocarFotoIgreja}
-          alto
-          rotulo="Adicionar foto da igreja"
-        />
+        <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 h-48 shadow-sm">
+          {fotoIgreja ? (
+            <img 
+              src={fotoIgreja} 
+              alt="Igreja Betel" 
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 font-sans text-xs">
+              <Camera size={24} className="mb-1 text-gray-400" />
+              <span>Nenhuma foto cadastrada</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div>

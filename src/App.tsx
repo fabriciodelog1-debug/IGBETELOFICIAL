@@ -394,9 +394,20 @@ interface TelaInicioProps {
   fotoIgreja: string | null;
   onTrocarFotoIgreja: (foto: string) => void;
   onAbrirCadastroMembro: () => void;
+  meuMembro: Membro | null;
+  onEditarMeuCadastro: (m: Membro) => void;
+  onExcluirMeuCadastro: () => void;
 }
 
-function TelaInicio({ ir, fotoIgreja, onTrocarFotoIgreja, onAbrirCadastroMembro }: TelaInicioProps) {
+function TelaInicio({
+  ir,
+  fotoIgreja,
+  onTrocarFotoIgreja,
+  onAbrirCadastroMembro,
+  meuMembro,
+  onEditarMeuCadastro,
+  onExcluirMeuCadastro,
+}: TelaInicioProps) {
   return (
     <div className="px-4 py-5 space-y-6">
       <div className="bg-black rounded-2xl p-5 text-white relative overflow-hidden">
@@ -407,26 +418,92 @@ function TelaInicio({ ir, fotoIgreja, onTrocarFotoIgreja, onAbrirCadastroMembro 
         <p className="text-xs text-gray-400 mt-1 relative z-10 font-mono">Eunápolis - BA</p>
       </div>
 
-      {/* BANNER DE AUTOCADASTRO DE MEMBROS */}
-      <div className="bg-white border-2 border-red-100 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-red-50 rounded-full" />
-        <div className="relative z-10 space-y-1">
-          <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-block mb-1">
-            Membro Betel
-          </span>
-          <h3 className="font-extrabold text-gray-900 text-base font-sans">Quer fazer parte da nossa família?</h3>
-          <p className="text-xs text-gray-600 leading-relaxed font-sans">
-            Seja membro oficial da Igreja Betel! Faça seu cadastro de forma simples para receber novidades e ter acompanhamento pastoral.
-          </p>
+      {/* BANNER DE AUTOCADASTRO OU EXIBIÇÃO DA FICHA DE MEMBRO */}
+      {meuMembro ? (
+        <div className="bg-white border-2 border-red-200 rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden animate-fadeIn">
+          <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-red-50 rounded-full" />
+          <div className="relative z-10 flex items-center justify-between border-b border-gray-100 pb-3">
+            <div>
+              <span className="bg-red-700 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-block mb-1">
+                Ficha de Membro Oficial
+              </span>
+              <h3 className="font-extrabold text-gray-900 text-base font-sans">Igreja Betel</h3>
+            </div>
+            <Logo className="w-10 h-10 border border-red-100 bg-red-50 text-red-700" />
+          </div>
+
+          <div className="relative z-10 space-y-2 text-xs text-gray-700 font-sans">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Nome Completo</p>
+              <p className="font-extrabold text-gray-900 text-sm">{meuMembro.nome}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {meuMembro.telefone && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Contato</p>
+                  <p className="font-bold text-gray-800">{meuMembro.telefone}</p>
+                </div>
+              )}
+              {meuMembro.nascimento && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Nascimento</p>
+                  <p className="font-bold text-gray-800">{meuMembro.nascimento.split("-").reverse().join("/")}</p>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {meuMembro.dataBatismo && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Batismo</p>
+                  <p className="font-bold text-gray-800">{meuMembro.dataBatismo.split("-").reverse().join("/")}</p>
+                </div>
+              )}
+              {meuMembro.nomeLider && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Líder Pastoreio</p>
+                  <p className="font-bold text-gray-800">{meuMembro.nomeLider}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-2 relative z-10 pt-1">
+            <button
+              onClick={() => onEditarMeuCadastro(meuMembro)}
+              className="flex-1 bg-gray-100 text-gray-700 font-extrabold text-xs py-2.5 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-gray-200"
+            >
+              <Pencil size={14} /> Editar Ficha
+            </button>
+            <button
+              onClick={onExcluirMeuCadastro}
+              className="px-3 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl active:scale-95 transition-all border border-red-100 flex items-center justify-center"
+              aria-label="Excluir meu cadastro local"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={onAbrirCadastroMembro}
-          className="w-full bg-red-700 text-white font-extrabold text-xs py-3 rounded-xl hover:bg-red-800 active:scale-95 transition-all shadow-sm relative z-10 flex items-center justify-center gap-2"
-        >
-          <UserPlus size={16} />
-          Quero me Cadastrar
-        </button>
-      </div>
+      ) : (
+        <div className="bg-white border-2 border-red-100 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
+          <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-red-50 rounded-full" />
+          <div className="relative z-10 space-y-1">
+            <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-block mb-1">
+              Membro Betel
+            </span>
+            <h3 className="font-extrabold text-gray-900 text-base font-sans">Quer fazer parte da nossa família?</h3>
+            <p className="text-xs text-gray-600 leading-relaxed font-sans">
+              Seja membro oficial da Igreja Betel! Faça seu cadastro de forma simples para receber novidades e ter acompanhamento pastoral.
+            </p>
+          </div>
+          <button
+            onClick={onAbrirCadastroMembro}
+            className="w-full bg-red-700 text-white font-extrabold text-xs py-3 rounded-xl hover:bg-red-800 active:scale-95 transition-all shadow-sm relative z-10 flex items-center justify-center gap-2"
+          >
+            <UserPlus size={16} />
+            Quero me Cadastrar
+          </button>
+        </div>
+      )}
 
       <div>
         <Selo>Foto da igreja</Selo>
@@ -1301,66 +1378,146 @@ function TelaBiblia({ ir }: TelaBibliaProps) {
    ====================================================================== */
 
 function TelaCuriosidades() {
+  const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState<number | null>(null);
+
+  // Normalizar strings para comparação (tirando acentos e deixando minúsculo)
+  const normalizar = (str: string) =>
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const resultados = PERSONAGENS_BIBLIA.filter((p) =>
+    normalizar(p.nome).includes(normalizar(busca))
+  );
+
+  const sugestoesRapidas = ["Moisés", "Davi", "Ester", "Daniel", "Paulo"];
 
   return (
     <div className="px-4 py-5 space-y-4">
       <Selo>Personagens da Bíblia</Selo>
       <p className="text-sm text-gray-600 font-sans leading-relaxed">
-        Curiosidades históricas sobre figuras bíblicas — informações de fora
-        do texto sagrado (arqueologia, historiadores antigos, tradição), com
-        a fonte sempre indicada. Não substituem a Escritura.
+        Digite o nome de um personagem bíblico abaixo para ver curiosidades e fatos arqueológicos/históricos associados a ele.
       </p>
 
-      <div className="space-y-3">
-        {PERSONAGENS_BIBLIA.map((p, i) => {
-          const expandido = aberto === i;
-          return (
-            <div
-              key={p.nome}
-              className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm"
-            >
-              <button
-                onClick={() => setAberto(expandido ? null : i)}
-                className="w-full flex items-center gap-3 p-4 text-left"
-              >
-                <span className="w-10 h-10 rounded-full bg-red-700 text-white flex items-center justify-center shrink-0 font-extrabold text-sm font-sans">
-                  {p.nome[0]}
-                </span>
-                <div className="flex-1">
-                  <p className="font-extrabold text-gray-900 text-sm font-sans">{p.nome}</p>
-                  <p className="text-xs text-gray-500 font-sans">{p.epoca}</p>
-                </div>
-                <ChevronRight
-                  size={18}
-                  className={`text-gray-400 transition-transform ${
-                    expandido ? "rotate-90" : ""
-                  }`}
-                />
-              </button>
+      {/* CAMPO DE BUSCA */}
+      <div className="relative">
+        <input
+          value={busca}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            setAberto(null); // fecha sanfonas quando digita nova busca
+          }}
+          placeholder="Digite o nome: Moisés, Davi, Ester..."
+          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 font-sans pr-10 shadow-sm bg-white text-gray-800"
+        />
+        {busca ? (
+          <button
+            onClick={() => {
+              setBusca("");
+              setAberto(null);
+            }}
+            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+            aria-label="Limpar busca"
+          >
+            <X size={18} />
+          </button>
+        ) : (
+          <span className="absolute right-3 top-3.5 text-gray-400">
+            <Lightbulb size={18} />
+          </span>
+        )}
+      </div>
 
-              {expandido && (
-                <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
-                  <p className="text-sm text-gray-700 font-sans">{p.resumo}</p>
-                  {p.curiosidades.map((c, j) => (
-                    <div
-                      key={j}
-                      className="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2"
-                    >
-                      <Lightbulb size={16} className="text-red-700 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-gray-800 font-sans">{c.texto}</p>
-                        <p className="text-xs text-gray-500 mt-1 font-mono">
-                          Fonte: {c.fonte}
-                        </p>
+      {/* SUGESTÕES RÁPIDAS */}
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        <span className="text-xs font-bold text-gray-400 self-center mr-1">Sugestões:</span>
+        {sugestoesRapidas.map((sug) => (
+          <button
+            key={sug}
+            onClick={() => {
+              setBusca(sug);
+              setAberto(null);
+            }}
+            className={`text-xs px-2.5 py-1 rounded-full font-sans border font-medium transition-all ${
+              normalizar(busca) === normalizar(sug)
+                ? "bg-red-700 text-white border-red-700"
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:scale-102"
+            }`}
+          >
+            {sug}
+          </button>
+        ))}
+      </div>
+
+      {/* LISTAGEM DOS PERSONAGENS ENCONTRADOS */}
+      <div className="space-y-3 pt-2">
+        {resultados.length === 0 ? (
+          <div className="text-center bg-gray-50 border border-dashed border-gray-300 rounded-2xl py-10 px-4">
+            <Lightbulb size={28} className="mx-auto text-gray-400 mb-2" />
+            <p className="text-sm text-gray-500 font-sans">
+              Nenhum personagem com esse nome encontrado. Tente buscar por outro nome ou limpe o campo.
+            </p>
+          </div>
+        ) : (
+          resultados.map((p, idx) => {
+            // Se houver apenas 1 resultado na busca ou busca for igual ao nome exato, abre automaticamente!
+            const expandido = resultados.length === 1 || normalizar(busca) === normalizar(p.nome) || aberto === idx;
+            return (
+              <div
+                key={p.nome}
+                className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all duration-200 ${
+                  resultados.length === 1 || normalizar(busca) === normalizar(p.nome)
+                    ? "border-red-200 ring-2 ring-red-50"
+                    : "border-gray-200"
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    if (resultados.length !== 1 && normalizar(busca) !== normalizar(p.nome)) {
+                      setAberto(expandido ? null : idx);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 p-4 text-left"
+                >
+                  <span className="w-10 h-10 rounded-full bg-red-700 text-white flex items-center justify-center shrink-0 font-extrabold text-sm font-sans">
+                    {p.nome[0]}
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-extrabold text-gray-900 text-sm font-sans">{p.nome}</p>
+                    <p className="text-xs text-gray-500 font-sans">{p.epoca}</p>
+                  </div>
+                  {resultados.length !== 1 && normalizar(busca) !== normalizar(p.nome) && (
+                    <ChevronRight
+                      size={18}
+                      className={`text-gray-400 transition-transform ${
+                        expandido ? "rotate-90" : ""
+                      }`}
+                    />
+                  )}
+                </button>
+
+                {expandido && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+                    <p className="text-sm text-gray-700 font-sans leading-relaxed">{p.resumo}</p>
+                    {p.curiosidades.map((c, j) => (
+                      <div
+                        key={j}
+                        className="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2.5 shadow-sm"
+                      >
+                        <Lightbulb size={18} className="text-red-700 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-800 font-sans leading-relaxed">{c.texto}</p>
+                          <p className="text-[10px] text-gray-500 mt-1.5 uppercase font-mono tracking-wider">
+                            Fonte: {c.fonte}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
@@ -1997,13 +2154,26 @@ export default function App() {
   const [mostrarFormAutocadastro, setMostrarFormAutocadastro] = useState(false);
   const [sucessoCadastro, setSucessoCadastro] = useState(false);
 
+  // Ficha de membro local
+  const [meuCadastroId, setMeuCadastroId] = useState<number | null>(null);
+  const [editandoMeuCadastro, setEditandoMeuCadastro] = useState<Membro | null>(null);
+  const [confirmarRemoverLocal, setConfirmarRemoverLocal] = useState(false);
+
   // Carrega os dados salvos uma única vez
   useEffect(() => {
     (async () => {
       try {
         const resultado = await window.storage.get(STORAGE_KEY, true);
         if (resultado && resultado.value) {
-          const carregados = { ...dadosPadrao(), ...JSON.parse(resultado.value) };
+          const parsed = JSON.parse(resultado.value);
+          const carregados = {
+            ...dadosPadrao(),
+            ...parsed,
+            grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
+            visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
+            licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
+            membros: Array.isArray(parsed.membros) ? parsed.membros : [],
+          };
           dadosRef.current = carregados;
           setDados(carregados);
         }
@@ -2017,6 +2187,14 @@ export default function App() {
         if (visto && visto.value) setUltimaVisualizacaoMembros(Number(visto.value) || 0);
       } catch (err) {
         // Sem visto prévio
+      }
+      try {
+        const meuId = await window.storage.get("betel:meu_cadastro_id", false);
+        if (meuId && meuId.value) {
+          setMeuCadastroId(Number(meuId.value));
+        }
+      } catch (err) {
+        // Sem cadastro local anterior
       }
     })();
   }, []);
@@ -2050,7 +2228,7 @@ export default function App() {
     });
 
   const setGrupos: React.Dispatch<React.SetStateAction<GrupoPastoreio[]>> = (atualizar) => {
-    const novosGrupos = typeof atualizar === "function" ? atualizar(dadosRef.current.grupos) : atualizar;
+    const novosGrupos = typeof atualizar === "function" ? atualizar(dadosRef.current.grupos || []) : atualizar;
     persistir({ ...dadosRef.current, grupos: novosGrupos });
   };
 
@@ -2073,12 +2251,12 @@ export default function App() {
     });
 
   const setVisitantes: React.Dispatch<React.SetStateAction<Visitante[]>> = (atualizar) => {
-    const novosVisitantes = typeof atualizar === "function" ? atualizar(dadosRef.current.visitantes) : atualizar;
+    const novosVisitantes = typeof atualizar === "function" ? atualizar(dadosRef.current.visitantes || []) : atualizar;
     persistir({ ...dadosRef.current, visitantes: novosVisitantes });
   };
 
   const setLicoes: React.Dispatch<React.SetStateAction<Licao[]>> = (atualizar) => {
-    const novasLicoes = typeof atualizar === "function" ? atualizar(dadosRef.current.licoes) : atualizar;
+    const novasLicoes = typeof atualizar === "function" ? atualizar(dadosRef.current.licoes || []) : atualizar;
     persistir({ ...dadosRef.current, licoes: novasLicoes });
   };
 
@@ -2089,7 +2267,7 @@ export default function App() {
     });
 
   const setMembros: React.Dispatch<React.SetStateAction<Membro[]>> = (atualizar) => {
-    const novosMembros = typeof atualizar === "function" ? atualizar(dadosRef.current.membros) : atualizar;
+    const novosMembros = typeof atualizar === "function" ? atualizar(dadosRef.current.membros || []) : atualizar;
     persistir({ ...dadosRef.current, membros: novosMembros });
   };
 
@@ -2129,6 +2307,14 @@ export default function App() {
     membros: "Cadastros de Membros",
   };
 
+  // Encontrar se já existe ficha de membro registrada localmente
+  const meuMembro = (dados.membros || []).find((m) => m.id === meuCadastroId) || null;
+
+  const handleEditarMeuCadastro = (membro: Membro) => {
+    setEditandoMeuCadastro(membro);
+    setMostrarFormAutocadastro(true);
+  };
+
   const renderTela = () => {
     switch (tela) {
       case "inicio":
@@ -2137,7 +2323,13 @@ export default function App() {
             ir={setTela}
             fotoIgreja={dados.fotoIgreja}
             onTrocarFotoIgreja={setFotoIgreja}
-            onAbrirCadastroMembro={() => setMostrarFormAutocadastro(true)}
+            onAbrirCadastroMembro={() => {
+              setEditandoMeuCadastro(null);
+              setMostrarFormAutocadastro(true);
+            }}
+            meuMembro={meuMembro}
+            onEditarMeuCadastro={handleEditarMeuCadastro}
+            onExcluirMeuCadastro={() => setConfirmarRemoverLocal(true)}
           />
         );
       case "cultos":
@@ -2187,7 +2379,13 @@ export default function App() {
             ir={setTela}
             fotoIgreja={dados.fotoIgreja}
             onTrocarFotoIgreja={setFotoIgreja}
-            onAbrirCadastroMembro={() => setMostrarFormAutocadastro(true)}
+            onAbrirCadastroMembro={() => {
+              setEditandoMeuCadastro(null);
+              setMostrarFormAutocadastro(true);
+            }}
+            meuMembro={meuMembro}
+            onEditarMeuCadastro={handleEditarMeuCadastro}
+            onExcluirMeuCadastro={() => setConfirmarRemoverLocal(true)}
           />
         );
     }
@@ -2238,20 +2436,33 @@ export default function App() {
         {/* MODAL DE AUTOCADASTRO DE MEMBRO */}
         {mostrarFormAutocadastro && (
           <FormularioMembro
-            inicial={null}
+            inicial={editandoMeuCadastro}
             onSalvar={(form) => {
-              setMembros((m) => [{ ...form, id: Date.now(), criadoEm: Date.now() }, ...m]);
+              if (editandoMeuCadastro) {
+                setMembros((m) =>
+                  m.map((item) => (item.id === editandoMeuCadastro.id ? { ...item, ...form } : item))
+                );
+                setEditandoMeuCadastro(null);
+              } else {
+                const novoId = Date.now();
+                setMembros((m) => [{ ...form, id: novoId, criadoEm: novoId }, ...m]);
+                setMeuCadastroId(novoId);
+                window.storage.set("betel:meu_cadastro_id", String(novoId), false).catch(() => {});
+                setSucessoCadastro(true);
+              }
               setMostrarFormAutocadastro(false);
-              setSucessoCadastro(true);
             }}
-            onCancelar={() => setMostrarFormAutocadastro(false)}
+            onCancelar={() => {
+              setMostrarFormAutocadastro(false);
+              setEditandoMeuCadastro(null);
+            }}
           />
         )}
 
         {/* FEEDBACK DE SUCESSO DO AUTOCADASTRO */}
         {sucessoCadastro && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-xl">
+            <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-xl font-sans">
               <div className="w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto">
                 <Sparkles size={24} />
               </div>
@@ -2267,6 +2478,41 @@ export default function App() {
               >
                 Amém, Obrigado!
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* CONFIRMAÇÃO DE REMOVER CADASTRO LOCAL */}
+        {confirmarRemoverLocal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-xl">
+              <div className="w-12 h-12 bg-red-100 text-red-700 rounded-full flex items-center justify-center mx-auto">
+                <Trash2 size={24} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-gray-900 text-base font-sans">Remover Ficha?</h4>
+                <p className="text-xs text-gray-600 font-sans leading-relaxed">
+                  Isso apenas ocultará a ficha deste aparelho. Seus dados continuam salvos de forma segura com os administradores da Igreja Betel.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmarRemoverLocal(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 font-bold text-xs py-3 rounded-xl border border-gray-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    setMeuCadastroId(null);
+                    window.storage.set("betel:meu_cadastro_id", "", false).catch(() => {});
+                    setConfirmarRemoverLocal(false);
+                  }}
+                  className="flex-1 bg-red-700 text-white font-bold text-xs py-3 rounded-xl hover:bg-red-800"
+                >
+                  Sim, Remover
+                </button>
+              </div>
             </div>
           </div>
         )}

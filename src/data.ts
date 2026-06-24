@@ -294,6 +294,186 @@ export const PERSONAGENS_BIBLIA = [
       }
     ]
   },
+  {
+    nome: "Mesa dos Pães da Proposição",
+    epoca: "Tabernáculo / Antigo Testamento",
+    resumo: "Uma mesa feita de madeira de acácia e revestida de ouro puro que continha continuamente doze pães assados especiais, representando as doze tribos de Israel.",
+    curiosidades: [
+      {
+        texto: "Os doze pães da proposição eram substituídos todo sábado por pães quentes e frescos. Os pães retirados pertenciam exclusivamente aos sacerdotes, que deveriam comê-los em lugar santo.",
+        fonte: "Levítico 24:5-9"
+      },
+      {
+        texto: "Em uma situação extrema de fuga de Saul, o jovem Davi e seus companheiros comeram os pães da proposição concedidos pelo sacerdote Aimeleque, demonstrando que a misericórdia e a preservação da vida superam as formalidades cerimoniais.",
+        fonte: "1 Samuel 21"
+      }
+    ]
+  },
+  {
+    nome: "Altar de Incenso",
+    epoca: "Tabernáculo / Antigo Testamento",
+    resumo: "Um pequeno altar quadrado feito de madeira de acácia revestida de ouro puro que ficava no Lugar Santo, logo antes do Véu do Lugar Santíssimo.",
+    curiosidades: [
+      {
+        texto: "O incenso deveria queimar continuamente dia e noite diante do Senhor, representando a intercessão constante e as orações do povo de Deus subindo aos céus.",
+        fonte: "Êxodo 30:7-8 / Apocalipse 8:3-4"
+      },
+      {
+        texto: "Nadabe e Abiú, filhos de Arão, foram consumidos por fogo divino após oferecerem fogo estranho no altar de incenso, o que violou o protocolo de santidade exigido.",
+        fonte: "Levítico 10:1-2"
+      }
+    ]
+  },
+  {
+    nome: "Pia de Bronze (Bacia de Bronze)",
+    epoca: "Tabernáculo / Antigo Testamento",
+    resumo: "Uma grande bacia contendo água que ficava no Pátio do Tabernáculo, entre o altar do holocausto e o Lugar Santo, usada para a purificação dos sacerdotes.",
+    curiosidades: [
+      {
+        texto: "A pia foi fabricada a partir dos espelhos de bronze doados de livre vontade pelas mulheres que serviam à entrada da Tenda da Congregação.",
+        fonte: "Êxodo 38:8"
+      },
+      {
+        texto: "Os sacerdotes eram instruídos a lavar rigorosamente as mãos e os pés nela antes de entrar na tenda ou aproximar-se do altar, sob pena de morte, simbolizando a purificação necessária para se aproximar de Deus.",
+        fonte: "Êxodo 30:18-21"
+      }
+    ]
+  },
+  {
+    nome: "Árvore de Acácia (Madeira de Acácia)",
+    epoca: "Tabernáculo / Antigo Testamento",
+    resumo: "A principal árvore e madeira utilizada na estrutura do Tabernáculo e em seus móveis sagrados (Arca, Mesa, Altar).",
+    curiosidades: [
+      {
+        texto: "A acácia (em hebraico 'Shittah') era uma das poucas árvores que cresciam abundantemente no clima árido e deserto do Sinai. Sua madeira é extremamente densa, pesada, resistente à podridão e a cupins, perfeita para a durabilidade do santuário móvel.",
+        fonte: "Botânica Bíblica"
+      },
+      {
+        texto: "A seiva da acácia-do-senegal é até hoje a principal fonte da 'goma-arábica', usada amplamente no mundo inteiro nas indústrias alimentícia e farmacêutica.",
+        fonte: "História Natural / Ciência"
+      }
+    ]
+  },
+  {
+    nome: "Árvore da Vida",
+    epoca: "Gênesis e Apocalipse",
+    resumo: "Uma árvore mística plantada no Jardim do Éden, que reaparece na Nova Jerusalém, simbolizando a imortalidade e a comunhão eterna com Deus.",
+    curiosidades: [
+      {
+        texto: "Em Apocalipse 22:2, é dito que a Árvore da Vida dá doze colheitas de frutos por ano, produzindo de mês em mês, e as suas folhas servem para a cura das nações.",
+        fonte: "Apocalipse 22"
+      },
+      {
+        texto: "Após a queda de Adão e Eva, querubins armados com uma espada flamejante foram posicionados para guardar o caminho para a Árvore da Vida, impedindo o homem de comer dela e viver para sempre no estado de pecado.",
+        fonte: "Gênesis 3:24"
+      }
+    ]
+  },
+  {
+    nome: "Sarça Ardente",
+    epoca: "Êxodo",
+    resumo: "O arbusto espinhoso inflamado que queimava sem ser consumido, através do qual Deus se revelou a Moisés no Monte Horebe.",
+    curiosidades: [
+      {
+        texto: "O arbusto é identificado botonicamente de forma provável com a 'Rubus sanctus' (silva-de-folhas-redondas) ou 'Acacia tortilis', comuns na região peninsular do Sinai.",
+        fonte: "Botânica do Sinai"
+      },
+      {
+        texto: "Foi nesse milagre que Deus revelou pela primeira vez a Moisés o Seu nome pessoal sagrado e eterno: 'Eu Sou o que Sou' (YHVH).",
+        fonte: "Êxodo 3:14"
+      }
+    ]
+  },
+  {
+    nome: "Bezaleel",
+    epoca: "Êxodo / Século XIII a.C.",
+    resumo: "O artesão principal escolhido por Deus para projetar, esculpir e construir o Tabernáculo e todos os seus vasos sagrados.",
+    curiosidades: [
+      {
+        texto: "Bezaleel é a primeira pessoa na Bíblia descrita expressamente como sendo 'cheia do Espírito de Deus' — não para profetizar ou reinar, mas para ter sabedoria e habilidade artística em trabalhos manuais.",
+        fonte: "Êxodo 31:1-5"
+      },
+      {
+        texto: "Seu nome em hebraico significa literalmente 'Sob a sombra de Deus', um nome muito apropriado para quem foi responsável por construir a tenda que representava a habitação e a sombra protetora do Senhor.",
+        fonte: "Estudos de Onomástica Bíblica"
+      }
+    ]
+  },
+  {
+    nome: "Jabez",
+    epoca: "Período dos Reis",
+    resumo: "Um homem citado brevemente nas genealogias de Judá, lembrado por uma oração poderosa em que pediu a Deus que ampliasse suas fronteiras.",
+    curiosidades: [
+      {
+        texto: "Seu nome em hebraico soa como a palavra para 'dor' ou 'tristeza', porque sua mãe o deu à luz com muito sofrimento. Ele orou pedindo que Deus o livrasse dessa dor para que não o afligisse.",
+        fonte: "1 Crônicas 4:9-10"
+      },
+      {
+        texto: "Apesar de estar cercado por centenas de nomes listados de forma genérica em nove capítulos de genealogia, Jabez se destaca com uma nota de que ele foi 'mais ilustre do que seus irmãos' devido à sua fé ativa.",
+        fonte: "Estudos Literários da Bíblia"
+      }
+    ]
+  },
+  {
+    nome: "Melquisedeque",
+    epoca: "Gênesis / Por volta de 2000 a.C.",
+    resumo: "O enigmático Rei de Salém (antiga Jerusalém) e Sacerdote do Deus Altíssimo que abençoou Abraão após uma grande vitória militar.",
+    curiosidades: [
+      {
+        texto: "Seu nome significa literalmente 'Rei de Justiça', e seu título de 'Rei de Salém' significa 'Rei de Paz'. Ele serviu pão e vinho a Abraão, antecipando símbolos da Santa Ceia.",
+        fonte: "Gênesis 14:18"
+      },
+      {
+        texto: "No Novo Testamento, no livro de Hebreus, ele é descrito como alguém 'sem pai, sem mãe, sem genealogia, sem princípio de dias nem fim de vida', sendo uma prefiguração profética direta do próprio Jesus Cristo.",
+        fonte: "Hebreus 7:3"
+      }
+    ]
+  },
+  {
+    nome: "Eude (Ehude)",
+    epoca: "Período dos Juízes",
+    resumo: "O segundo juiz libertador de Israel, famoso por salvar o povo da opressão de Eglom, o rei dos moabitas.",
+    curiosidades: [
+      {
+        texto: "Eude era canhoto (ou 'tinha a mão direita impedida'), um detalhe físico crucial que lhe permitiu esconder uma adaga de dois gumes sob a roupa na coxa direita, onde os guardas do palácio moabita não suspeitavam de uma arma.",
+        fonte: "Juízes 3:15-16"
+      },
+      {
+        texto: "O relato detalha com precisão os costumes palacianos da época, como o fato de o rei estar resfriado ou descansando em uma 'sala de verão' privativa de cobertura plana no topo do edifício.",
+        fonte: "História e Arqueologia do Antigo Oriente"
+      }
+    ]
+  },
+  {
+    nome: "Filemom",
+    epoca: "Século I d.C. / Igreja Primitiva",
+    resumo: "Um cristão rico de Colossos, destinatário de uma carta pessoal de Paulo que trata da reconciliação com seu escravo fugitivo, Onésimo.",
+    curiosidades: [
+      {
+        texto: "A carta a Filemom é a menor correspondência preservada do Apóstolo Paulo (apenas 25 versículos) e uma das mais íntimas, escrita diretamente da prisão em Roma.",
+        fonte: "Estudos do Novo Testamento"
+      },
+      {
+        texto: "Nela, Paulo usa uma sutil persuasão literária, inclusive um trocadilho com o nome 'Onésimo' (que significa 'Útil' em grego), dizendo que ele antes era inútil, mas agora se tornara útil para ambos.",
+        fonte: "Filologia e Retórica Bíblica"
+      }
+    ]
+  },
+  {
+    nome: "Mical",
+    epoca: "Reino de Israel, por volta de 1010 a.C.",
+    resumo: "Filha mais nova do rei Saul e primeira esposa de Davi, que salvou a vida deste ao ajudá-lo a fugir de seu pai enraivecido.",
+    curiosidades: [
+      {
+        texto: "Para salvar Davi da patrulha de Saul, ela colocou um ídolo doméstico (terafim) na cama dele e o cobriu com uma colcha e pelos de cabra na cabeceira, simulando que ele estava doente e dormindo.",
+        fonte: "1 Samuel 19:13-16"
+      },
+      {
+        texto: "Mais tarde, ela criticou asperamente Davi por dançar com entusiasmo diante da Arca da Aliança vestindo apenas uma estola de linho, o que levou a uma ruptura emocional descrita de forma marcante no texto bíblico.",
+        fonte: "2 Samuel 6:16-23"
+      }
+    ]
+  },
 ];
 
 export const EVENTOS_EXEMPLO = [

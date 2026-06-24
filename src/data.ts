@@ -189,6 +189,111 @@ export const PERSONAGENS_BIBLIA = [
       },
     ],
   },
+  {
+    nome: "Arca da Aliança",
+    epoca: "Antigo Testamento / Tabernáculo",
+    resumo: "O objeto mais sagrado do antigo Israel, uma caixa de madeira de acácia revestida de ouro puro que representava a presença de Deus na Terra.",
+    curiosidades: [
+      {
+        texto: "Segundo Hebreus 9:4, ela guardava três itens: as Tábuas da Lei (Os Dez Mandamentos), um vaso de ouro com o maná e o cajado de Arão que floresceu.",
+        fonte: "Escrituras Sagradas"
+      },
+      {
+        texto: "O paradeiro da Arca após a destruição de Jerusalém pelos babilônios em 586 a.C. é um dos maiores mistérios arqueológicos de todos os tempos. Ela não é mencionada na lista de tesouros saqueados em 2 Reis 25.",
+        fonte: "Arqueologia Bíblica"
+      }
+    ]
+  },
+  {
+    nome: "Candelabro (Menorá)",
+    epoca: "Tabernáculo / Templo de Jerusalém",
+    resumo: "O candelabro de ouro de sete braços que ficava no Lugar Santo, simbolizando a luz de Deus, a presença divina e a sabedoria.",
+    curiosidades: [
+      {
+        texto: "Diferente dos candelabros comuns formados por partes unidas, a Menorá do Tabernáculo foi moldada de uma única peça de ouro puro batido (um talento de ouro, pesando cerca de 34 kg).",
+        fonte: "Êxodo 25:31"
+      },
+      {
+        texto: "Sua imagem mais antiga sobrevivente está esculpida no Arco de Tito em Roma, retratando os soldados romanos carregando os tesouros saqueados do Templo de Jerusalém no ano 70 d.C.",
+        fonte: "História Romana / Arqueologia"
+      }
+    ]
+  },
+  {
+    nome: "Cajado de Arão",
+    epoca: "Êxodo / Deserto",
+    resumo: "O bastão de madeira pertencente a Arão, irmão de Moisés, que floresceu milagrosamente para confirmar a escolha de sua tribo para o sacerdócio.",
+    curiosidades: [
+      {
+        texto: "O cajado brotou, floresceu e deu amêndoas maduras em uma única noite (Números 17:8), servindo como um sinal milagroso de vida surgindo do que estava morto.",
+        fonte: "Números 17"
+      },
+      {
+        texto: "No antigo Oriente Médio, o cajado de um líder de clã simbolizava sua linhagem e autoridade jurídica, muitas vezes gravado com marcas exclusivas da tribo.",
+        fonte: "Tradição Antiga"
+      }
+    ]
+  },
+  {
+    nome: "Pote de Maná",
+    epoca: "Peregrinação no Deserto",
+    resumo: "Um vaso contendo uma porção do alimento milagroso (Maná) fornecido por Deus durante os 40 anos no deserto, guardado como memorial.",
+    curiosidades: [
+      {
+        texto: "Enquanto o maná diário recolhido pelo povo estragava e criava bichos se guardado de um dia para o outro, a porção colocada no pote de ouro permaneceu perfeitamente preservada por gerações dentro da Arca da Aliança.",
+        fonte: "Êxodo 16:33-34"
+      },
+      {
+        texto: "A palavra 'Maná' deriva da expressão hebraica 'Man Hu', que significa literalmente 'O que é isto?', pois o povo nunca tinha visto algo parecido.",
+        fonte: "Filologia Bíblica"
+      }
+    ]
+  },
+  {
+    nome: "Urim e Tumim",
+    epoca: "Sacerdócio de Israel",
+    resumo: "Objetos sagrados guardados junto ao peitoral do Sumo Sacerdote, utilizados para consultar e discernir a vontade de Deus em decisões cruciais.",
+    curiosidades: [
+      {
+        texto: "Seus nomes significam literalmente 'Luzes' (Urim) e 'Perfeições' (Tumim) em hebraico, representando a clareza e a verdade absoluta das respostas de Deus.",
+        fonte: "Estudos Teológicos"
+      },
+      {
+        texto: "Estudos históricos sugerem que eram pedras ou objetos semelhantes a dados, lançados para dar respostas claras do tipo 'sim', 'não' ou 'sem resposta' para guiar os reis e juízes de Israel.",
+        fonte: "Arqueologia Bíblica"
+      }
+    ]
+  },
+  {
+    nome: "Véu do Templo",
+    epoca: "Tabernáculo / Templo de Jerusalém",
+    resumo: "A imensa e espessa cortina de tecido ornamentado que separava o Lugar Santo (acessível aos sacerdotes) do Lugar Santíssimo (presença direta de Deus).",
+    curiosidades: [
+      {
+        texto: "Tradições históricas sugerem que o véu do Templo de Jerusalém tinha a espessura da palma de uma mão e era tão robusto e pesado que eram necessários dezenas de sacerdotes para movê-lo.",
+        fonte: "Tradição Judaica / Talmude"
+      },
+      {
+        texto: "No momento exato em que Jesus expirou na cruz, o Evangelho de Mateus registra que o véu do Templo se rasgou de cima a baixo — simbolizando a abertura do caminho direto à presença de Deus para toda a humanidade.",
+        fonte: "Mateus 27:51"
+      }
+    ]
+  },
+  {
+    nome: "Estrela de Belém",
+    epoca: "Nascimento de Jesus / Século I",
+    resumo: "O corpo celeste luminoso que guiou os Reis Magos vindos do Oriente até o local onde Jesus havia nascido.",
+    curiosidades: [
+      {
+        texto: "Astrônomos modernos sugerem que a estrela pode ter sido uma conjunção planetária tripla extremamente rara entre Júpiter e Saturno na constelação de Peixes no ano 7 a.C., ou o cometa Halley no ano 12 a.C.",
+        fonte: "Astronomia Moderna"
+      },
+      {
+        texto: "Na antiga astrologia da Pérsia e Babilônia (origem provável dos magos), Júpiter representava o 'planeta dos reis' e Saturno estava associado aos judeus, o que interpretaram como o nascimento de um grande rei na Judeia.",
+        fonte: "História e Astronomia Antiga"
+      }
+    ]
+  },
 ];
 
 export const EVENTOS_EXEMPLO = [

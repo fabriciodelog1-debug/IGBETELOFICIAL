@@ -53,6 +53,9 @@ import {
   STORAGE_KEY_VISTO_MEMBROS,
 } from "./data";
 
+// @ts-ignore
+import FOTO_IGREJA_DEFAULT from "./assets/images/foto_igreja_betel_real_1782324243852.jpg";
+
 /* ======================================================================
    INTERFACE E CONFIGURAÇÃO DE PERSISTÊNCIA (AI Studio Storage / LocalStorage)
    ====================================================================== */
@@ -157,7 +160,7 @@ interface DadosApp {
 
 function dadosPadrao(): DadosApp {
   return {
-    fotoIgreja: null,
+    fotoIgreja: FOTO_IGREJA_DEFAULT,
     linksAoVivo: {
       youtube: REDES_SOCIAIS.youtube,
       radio: "",
@@ -397,6 +400,7 @@ interface TelaInicioProps {
   meuMembro: Membro | null;
   onEditarMeuCadastro: (m: Membro) => void;
   onExcluirMeuCadastro: () => void;
+  totalMembros: number;
 }
 
 function TelaInicio({
@@ -407,6 +411,7 @@ function TelaInicio({
   meuMembro,
   onEditarMeuCadastro,
   onExcluirMeuCadastro,
+  totalMembros,
 }: TelaInicioProps) {
   return (
     <div className="px-4 py-5 space-y-6">
@@ -427,6 +432,11 @@ function TelaInicio({
               <span className="bg-red-700 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-block mb-1">
                 Ficha de Membro Oficial
               </span>
+              {totalMembros > 0 && (
+                <span className="bg-red-50 text-red-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-flex items-center gap-1 ml-1.5 align-middle mb-1">
+                  {totalMembros} {totalMembros === 1 ? "Membro" : "Membros"}
+                </span>
+              )}
               <h3 className="font-extrabold text-gray-900 text-base font-sans">Igreja Betel</h3>
             </div>
             <Logo className="w-10 h-10 border border-red-100 bg-red-50 text-red-700" />
@@ -487,9 +497,17 @@ function TelaInicio({
         <div className="bg-white border-2 border-red-100 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
           <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-red-50 rounded-full" />
           <div className="relative z-10 space-y-1">
-            <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-block mb-1">
-              Membro Betel
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-block mb-1">
+                Membro Betel
+              </span>
+              {totalMembros > 0 && (
+                <span className="bg-green-50 text-green-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-sans inline-flex items-center gap-1 mb-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  {totalMembros} {totalMembros === 1 ? "Cadastrado" : "Cadastrados"}
+                </span>
+              )}
+            </div>
             <h3 className="font-extrabold text-gray-900 text-base font-sans">Quer fazer parte da nossa família?</h3>
             <p className="text-xs text-gray-600 leading-relaxed font-sans">
               Seja membro oficial da Igreja Betel! Faça seu cadastro de forma simples para receber novidades e ter acompanhamento pastoral.
@@ -1365,7 +1383,7 @@ function TelaBiblia({ ir }: TelaBibliaProps) {
         </span>
         <div className="flex-1 text-left">
           <p className="font-bold text-gray-900 text-sm font-sans">Curiosidades bíblicas</p>
-          <p className="text-xs text-gray-500 font-sans">Personagens importantes da Bíblia</p>
+          <p className="text-xs text-gray-500 font-sans">Personagens, objetos e símbolos</p>
         </div>
         <ChevronRight size={16} className="text-gray-400" />
       </button>
@@ -1389,13 +1407,13 @@ function TelaCuriosidades() {
     normalizar(p.nome).includes(normalizar(busca))
   );
 
-  const sugestoesRapidas = ["Moisés", "Davi", "Ester", "Daniel", "Paulo"];
+  const sugestoesRapidas = ["Moisés", "Davi", "Arca da Aliança", "Menorá", "Estrela de Belém"];
 
   return (
     <div className="px-4 py-5 space-y-4">
-      <Selo>Personagens da Bíblia</Selo>
+      <Selo>Curiosidades Bíblicas</Selo>
       <p className="text-sm text-gray-600 font-sans leading-relaxed">
-        Digite o nome de um personagem bíblico abaixo para ver curiosidades e fatos arqueológicos/históricos associados a ele.
+        Digite o nome de um personagem, objeto sagrado ou elemento bíblico para ver fatos e descobertas históricas, arqueológicas ou teológicas.
       </p>
 
       {/* CAMPO DE BUSCA */}
@@ -1406,7 +1424,7 @@ function TelaCuriosidades() {
             setBusca(e.target.value);
             setAberto(null); // fecha sanfonas quando digita nova busca
           }}
-          placeholder="Digite o nome: Moisés, Davi, Ester..."
+          placeholder="Busque por Moisés, Arca da Aliança, Menorá, Véu..."
           className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 font-sans pr-10 shadow-sm bg-white text-gray-800"
         />
         {busca ? (
@@ -1454,7 +1472,7 @@ function TelaCuriosidades() {
           <div className="text-center bg-gray-50 border border-dashed border-gray-300 rounded-2xl py-10 px-4">
             <Lightbulb size={28} className="mx-auto text-gray-400 mb-2" />
             <p className="text-sm text-gray-500 font-sans">
-              Nenhum personagem com esse nome encontrado. Tente buscar por outro nome ou limpe o campo.
+              Nenhum item ou personagem com esse nome foi encontrado. Tente buscar por outro termo ou limpe o campo.
             </p>
           </div>
         ) : (
@@ -2330,6 +2348,7 @@ export default function App() {
             meuMembro={meuMembro}
             onEditarMeuCadastro={handleEditarMeuCadastro}
             onExcluirMeuCadastro={() => setConfirmarRemoverLocal(true)}
+            totalMembros={dados.membros?.length || 0}
           />
         );
       case "cultos":
@@ -2386,6 +2405,7 @@ export default function App() {
             meuMembro={meuMembro}
             onEditarMeuCadastro={handleEditarMeuCadastro}
             onExcluirMeuCadastro={() => setConfirmarRemoverLocal(true)}
+            totalMembros={dados.membros?.length || 0}
           />
         );
     }

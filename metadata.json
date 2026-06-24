@@ -1,0 +1,6 @@
+{
+  "name": "Igreja Betel",
+  "description": "Aplicativo oficial para a Igreja Betel de Eunápolis - BA. Acesse os cultos, lições, devocionais, escalas e assista ao vivo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

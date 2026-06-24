@@ -176,6 +176,66 @@ function dadosPadrao(): DadosApp {
   };
 }
 
+function mesclarDados(local: DadosApp, remoto: DadosApp): DadosApp {
+  const mesclarColecao = <T extends { id: number }>(locais: T[], remotos: T[]): T[] => {
+    const mapa = new Map<number, T>();
+    if (Array.isArray(remotos)) {
+      remotos.forEach((item) => {
+        if (item && typeof item.id === "number") mapa.set(item.id, item);
+      });
+    }
+    if (Array.isArray(locais)) {
+      locais.forEach((item) => {
+        if (item && typeof item.id === "number") mapa.set(item.id, item);
+      });
+    }
+    return Array.from(mapa.values());
+  };
+
+  const membrosMesclados = mesclarColecao(local.membros || [], remoto.membros || []).sort(
+    (a, b) => b.id - a.id
+  );
+  
+  const visitantesMesclados = mesclarColecao(local.visitantes || [], remoto.visitantes || []).sort(
+    (a, b) => b.id - a.id
+  );
+
+  const licoesMescladas = mesclarColecao(local.licoes || [], remoto.licoes || []).sort(
+    (a, b) => b.id - a.id
+  );
+
+  const gruposMesclados = mesclarColecao(local.grupos || [], remoto.grupos || []).sort(
+    (a, b) => b.id - a.id
+  );
+
+  const redesMescladas = { ...(remoto.redes || {}), ...(local.redes || {}) };
+  const escalasMescladas = { ...(remoto.escalas || {}), ...(local.escalas || {}) };
+  const ministrantesMesclados = { ...(remoto.ministrantes || {}), ...(local.ministrantes || {}) };
+
+  const linksAoVivoMesclados = {
+    youtube: local.linksAoVivo?.youtube !== REDES_SOCIAIS.youtube ? (local.linksAoVivo?.youtube || remoto.linksAoVivo?.youtube) : (remoto.linksAoVivo?.youtube || local.linksAoVivo?.youtube),
+    radio: local.linksAoVivo?.radio || remoto.linksAoVivo?.radio || "",
+    tvweb: local.linksAoVivo?.tvweb || remoto.linksAoVivo?.tvweb || "",
+  };
+
+  const fotoIgrejaMesclada = 
+    local.fotoIgreja && local.fotoIgreja !== FOTO_IGREJA_DEFAULT 
+      ? local.fotoIgreja 
+      : (remoto.fotoIgreja || local.fotoIgreja);
+
+  return {
+    fotoIgreja: fotoIgrejaMesclada,
+    linksAoVivo: linksAoVivoMesclados,
+    grupos: gruposMesclados,
+    redes: redesMescladas,
+    escalas: escalasMescladas,
+    visitantes: visitantesMesclados,
+    licoes: licoesMescladas,
+    ministrantes: ministrantesMesclados,
+    membros: membrosMesclados,
+  };
+}
+
 const ABAS = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "cultos", label: "Cultos", icon: Calendar },
@@ -413,6 +473,8 @@ function TelaInicio({
   onExcluirMeuCadastro,
   totalMembros,
 }: TelaInicioProps) {
+  const inputIgrejaRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="px-4 py-5 space-y-6">
       <div className="bg-black rounded-2xl p-5 text-white relative overflow-hidden">
@@ -525,20 +587,46 @@ function TelaInicio({
 
       <div>
         <Selo>Foto da igreja</Selo>
-        <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 h-48 shadow-sm">
+        <div 
+          onClick={() => inputIgrejaRef.current?.click()}
+          className="relative w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 h-48 shadow-sm cursor-pointer group"
+          title="Clique para trocar a foto da igreja"
+        >
           {fotoIgreja ? (
             <img 
               src={fotoIgreja} 
               alt="Igreja Betel" 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover group-hover:brightness-90 transition-all" 
               referrerPolicy="no-referrer"
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 font-sans text-xs">
               <Camera size={24} className="mb-1 text-gray-400" />
-              <span>Nenhuma foto cadastrada</span>
+              <span>Clique para carregar a foto da igreja</span>
             </div>
           )}
+          {/* Legenda sutil ao passar o mouse para facilitar a edição */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-sans gap-1 font-semibold pointer-events-none">
+            <Camera size={20} />
+            <span>Trocar foto da igreja</span>
+          </div>
+          <input
+            ref={inputIgrejaRef}
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) {
+                try {
+                  const base64 = await lerArquivoComoBase64(arquivo);
+                  onTrocarFotoIgreja(base64);
+                } catch (err) {
+                  console.error("Erro ao ler foto da igreja:", err);
+                }
+              }
+            }}
+            className="hidden"
+          />
         </div>
       </div>
 
@@ -2186,16 +2274,54 @@ export default function App() {
   const [editandoMeuCadastro, setEditandoMeuCadastro] = useState<Membro | null>(null);
   const [confirmarRemoverLocal, setConfirmarRemoverLocal] = useState(false);
 
-  // Carrega os dados salvos uma única vez
+  // Carrega os dados salvos e sincroniza periodicamente
   useEffect(() => {
+    const sanitizarFoto = (foto: string | null) => {
+      if (!foto) return FOTO_IGREJA_DEFAULT;
+      if (!foto.startsWith("data:") && !foto.startsWith("http") && !foto.startsWith("https")) {
+        return FOTO_IGREJA_DEFAULT;
+      }
+      return foto;
+    };
+
+    const buscarSincronizar = async () => {
+      try {
+        const resultado = await window.storage.get(STORAGE_KEY, true);
+        if (resultado && resultado.value) {
+          const parsed = JSON.parse(resultado.value);
+          const remoto: DadosApp = {
+            ...dadosPadrao(),
+            ...parsed,
+            fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
+            grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
+            visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
+            licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
+            membros: Array.isArray(parsed.membros) ? parsed.membros : [],
+          };
+
+          const dadosAtuais = dadosRef.current;
+          const novosMesclados = mesclarDados(dadosAtuais, remoto);
+          
+          if (JSON.stringify(dadosAtuais) !== JSON.stringify(novosMesclados)) {
+            dadosRef.current = novosMesclados;
+            setDados(novosMesclados);
+          }
+        }
+      } catch (err) {
+        // Silencioso em caso de erro de rede temporário
+      }
+    };
+
+    // Fluxo inicial de carregamento
     (async () => {
       try {
         const resultado = await window.storage.get(STORAGE_KEY, true);
         if (resultado && resultado.value) {
           const parsed = JSON.parse(resultado.value);
-          const carregados = {
+          const carregados: DadosApp = {
             ...dadosPadrao(),
             ...parsed,
+            fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
             grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
             visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
             licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
@@ -2205,7 +2331,7 @@ export default function App() {
           setDados(carregados);
         }
       } catch (err) {
-        // Ainda sem dados salvos
+        // Sem dados salvos anteriormente
       } finally {
         setCarregado(true);
       }
@@ -2224,14 +2350,37 @@ export default function App() {
         // Sem cadastro local anterior
       }
     })();
+
+    // Inicia intervalo de sincronização a cada 8 segundos
+    const intervalo = setInterval(buscarSincronizar, 8000);
+    return () => clearInterval(intervalo);
   }, []);
 
   const persistir = async (novosDados: DadosApp) => {
-    dadosRef.current = novosDados;
-    setDados(novosDados);
     setStatusSalvar("salvando");
     try {
-      await window.storage.set(STORAGE_KEY, JSON.stringify(novosDados), true);
+      // 1. Busca os dados remotos mais recentes para fazer um merge e evitar sobrescrever cadastros de terceiros
+      let dadosFinais = novosDados;
+      const resultado = await window.storage.get(STORAGE_KEY, true);
+      if (resultado && resultado.value) {
+        const parsed = JSON.parse(resultado.value);
+        const remoto: DadosApp = {
+          ...dadosPadrao(),
+          ...parsed,
+          grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
+          visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
+          licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
+          membros: Array.isArray(parsed.membros) ? parsed.membros : [],
+        };
+        dadosFinais = mesclarDados(novosDados, remoto);
+      }
+
+      // 2. Atualiza o estado local e de referência
+      dadosRef.current = dadosFinais;
+      setDados(dadosFinais);
+
+      // 3. Grava de forma segura na nuvem compartilhada
+      await window.storage.set(STORAGE_KEY, JSON.stringify(dadosFinais), true);
       setStatusSalvar("ok");
     } catch (err) {
       console.error("Não foi possível salvar os dados do app", err);
@@ -2243,6 +2392,10 @@ export default function App() {
         mensagem.includes("5mb") ||
         mensagem.includes("quota");
       setStatusSalvar(pareceTamanho ? "erro_tamanho" : "erro");
+
+      // Em caso de falha, garante que o usuário ainda veja o estado local sem interrupções
+      dadosRef.current = novosDados;
+      setDados(novosDados);
     }
   };
 

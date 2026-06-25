@@ -709,7 +709,7 @@ function TelaInicio({
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-100">Transmissão Ativa</p>
               <h4 className="font-extrabold text-sm font-sans">Culto Ao Vivo no YouTube</h4>
-              <p className="text-[10px] text-red-100/95 font-sans mt-0.5 font-semibold">Live domingo • Todo domingo às 18h30</p>
+              <p className="text-[10px] text-red-100/95 font-sans mt-0.5 font-semibold">Live domingo todo domingo às 18h30</p>
             </div>
           </div>
           <span className="bg-white/20 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1 shrink-0 font-sans">
@@ -724,8 +724,8 @@ function TelaInicio({
             </span>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-700">Culto no YouTube</p>
-              <h4 className="font-extrabold text-sm text-gray-900 font-sans">Live domingo</h4>
-              <p className="text-[10px] text-gray-500 font-sans mt-0.5">Todo domingo às 18h30</p>
+              <h4 className="font-extrabold text-sm text-gray-900 font-sans">Canal Oficial</h4>
+              <p className="text-[10px] text-gray-500 font-sans mt-0.5">Live domingo todo domingo às 18h30</p>
             </div>
           </div>
           <button

@@ -34,6 +34,8 @@ import {
   FileText,
   Tv,
   LucideIcon,
+  Share2,
+  Search,
 } from "lucide-react";
 
 import {
@@ -692,7 +694,7 @@ function TelaInicio({
         <p className="text-xs text-gray-400 mt-1 relative z-10 font-mono">Eunápolis - BA</p>
       </div>
 
-      {linksAoVivo?.youtube && (
+      {linksAoVivo?.youtube ? (
         <a
           href={linksAoVivo.youtube.startsWith("http") ? linksAoVivo.youtube : `https://${linksAoVivo.youtube}`}
           target="_blank"
@@ -707,12 +709,32 @@ function TelaInicio({
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-100">Transmissão Ativa</p>
               <h4 className="font-extrabold text-sm font-sans">Culto Ao Vivo no YouTube</h4>
+              <p className="text-[10px] text-red-100/95 font-sans mt-0.5 font-semibold">Live domingo • Todo domingo às 18h30</p>
             </div>
           </div>
           <span className="bg-white/20 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1 shrink-0 font-sans">
             <Youtube size={14} /> Assistir Agora
           </span>
         </a>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-red-50 text-red-700 flex items-center justify-center shrink-0">
+              <Youtube size={20} />
+            </span>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-red-700">Culto no YouTube</p>
+              <h4 className="font-extrabold text-sm text-gray-900 font-sans">Live domingo</h4>
+              <p className="text-[10px] text-gray-500 font-sans mt-0.5">Todo domingo às 18h30</p>
+            </div>
+          </div>
+          <button
+            onClick={() => ir("aovivo")}
+            className="text-red-700 font-extrabold text-xs px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 flex items-center gap-1 shrink-0 font-sans transition-colors"
+          >
+            Ativar Culto ao Vivo
+          </button>
+        </div>
       )}
 
       {/* BANNER DE AUTOCADASTRO OU EXIBIÇÃO DA FICHA DE MEMBRO */}
@@ -1660,11 +1682,54 @@ interface TelaBibliaProps {
 
 function TelaBiblia({ ir }: TelaBibliaProps) {
   const [indice, setIndice] = useState(0);
+  const [copiado, setCopiado] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [copiadoIdx, setCopiadoIdx] = useState<number | null>(null);
   const v = VERSICULOS[indice];
 
   const proximo = () => setIndice((i) => (i + 1) % VERSICULOS.length);
   const anterior = () =>
     setIndice((i) => (i - 1 + VERSICULOS.length) % VERSICULOS.length);
+
+  const copiarParaClipboard = (texto: string) => {
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    }).catch((err) => {
+      console.error("Falha ao copiar texto: ", err);
+    });
+  };
+
+  const compartilhar = async () => {
+    const textoCompartilhar = `"${v.texto}" - ${v.ref}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Versículo do Dia",
+          text: textoCompartilhar,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          copiarParaClipboard(textoCompartilhar);
+        }
+      }
+    } else {
+      copiarParaClipboard(textoCompartilhar);
+    }
+  };
+
+  // Normalizar strings para comparação (tirando acentos e deixando minúsculo)
+  const normalizar = (str: string) =>
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const resultados = busca.trim() === ""
+    ? []
+    : VERSICULOS.map((item, originalIndex) => ({ ...item, originalIndex }))
+        .filter(
+          (item) =>
+            normalizar(item.texto).includes(normalizar(busca)) ||
+            normalizar(item.ref).includes(normalizar(busca))
+        );
 
   return (
     <div className="px-4 py-5 space-y-5">
@@ -1675,14 +1740,130 @@ function TelaBiblia({ ir }: TelaBibliaProps) {
           "{v.texto}"
         </p>
         <p className="text-sm text-gray-300 mt-3 relative z-10 font-sans">{v.ref}</p>
-        <div className="flex justify-between mt-4 relative z-10">
-          <button onClick={anterior} className="p-2 rounded-full bg-white/10 active:scale-95 transition-transform">
+        <div className="flex justify-between items-center mt-4 relative z-10">
+          <button onClick={anterior} aria-label="Anterior" className="p-2 rounded-full bg-white/10 active:scale-95 transition-transform hover:bg-white/20">
             <ChevronLeft size={18} />
           </button>
-          <button onClick={proximo} className="p-2 rounded-full bg-white/10 active:scale-95 transition-transform">
+          
+          <button
+            onClick={compartilhar}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-red-700 text-white font-extrabold text-xs active:scale-95 transition-all hover:bg-red-800 shadow-md font-sans"
+          >
+            <Share2 size={13} />
+            {copiado ? "Copiado!" : "Compartilhar"}
+          </button>
+
+          <button onClick={proximo} aria-label="Próximo" className="p-2 rounded-full bg-white/10 active:scale-95 transition-transform hover:bg-white/20">
             <ChevronRight size={18} />
           </button>
         </div>
+      </div>
+
+      {/* CAMPO DE PESQUISA */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-3">
+        <h4 className="font-extrabold text-gray-900 text-sm font-sans flex items-center gap-2">
+          <Search size={16} className="text-red-700" />
+          <span>Pesquisar Versículos</span>
+        </h4>
+        <p className="text-xs text-gray-500 font-sans">
+          Busque por palavras-chave (ex: "fortalece", "Deus", "pastor") ou referências (ex: "Salmos", "Filipenses").
+        </p>
+        <div className="relative">
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Digite palavras ou livro..."
+            className="w-full border border-gray-200 rounded-xl pl-10 pr-10 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-red-700 font-sans"
+          />
+          <Search size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
+          {busca && (
+            <button
+              onClick={() => setBusca("")}
+              className="absolute right-3 top-3 p-0.5 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* RESULTADOS DA BUSCA */}
+        {busca.trim() !== "" && (
+          <div className="space-y-2 mt-3 pt-3 border-t border-gray-100 max-h-64 overflow-y-auto">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-sans">
+              Resultados ({resultados.length})
+            </p>
+            {resultados.length > 0 ? (
+              resultados.map((res) => {
+                const isCopiadoRes = copiadoIdx === res.originalIndex;
+                
+                const compartilharRes = async (e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  const textoCompartilhar = `"${res.texto}" - ${res.ref}`;
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: "Versículo Compartilhado",
+                        text: textoCompartilhar,
+                      });
+                    } catch (err) {
+                      if (err instanceof Error && err.name !== "AbortError") {
+                        copiarParaClipboardRes(textoCompartilhar, res.originalIndex);
+                      }
+                    }
+                  } else {
+                    copiarParaClipboardRes(textoCompartilhar, res.originalIndex);
+                  }
+                };
+
+                const copiarParaClipboardRes = (texto: string, idx: number) => {
+                  navigator.clipboard.writeText(texto).then(() => {
+                    setCopiadoIdx(idx);
+                    setTimeout(() => setCopiadoIdx(null), 2000);
+                  }).catch((err) => {
+                    console.error("Falha ao copiar texto: ", err);
+                  });
+                };
+
+                return (
+                  <div
+                    key={res.originalIndex}
+                    onClick={() => setIndice(res.originalIndex)}
+                    className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                      indice === res.originalIndex
+                        ? "bg-red-50/50 border-red-200 ring-1 ring-red-200"
+                        : "bg-gray-50 border-gray-100 hover:bg-gray-100/70"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold text-gray-800 leading-relaxed font-sans">
+                      "{res.texto}"
+                    </p>
+                    <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gray-200/50">
+                      <span className="text-[10px] font-bold text-gray-400 font-mono">
+                        {res.ref}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={compartilharRes}
+                          className="flex items-center gap-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-600 font-bold text-[10px] px-2 py-1 rounded-lg transition-all"
+                        >
+                          <Share2 size={10} className="text-gray-500" />
+                          <span>{isCopiadoRes ? "Copiado!" : "Compartilhar"}</span>
+                        </button>
+                        <span className="text-[9px] text-red-600 font-bold uppercase font-sans tracking-wide">
+                          {indice === res.originalIndex ? "Ativo" : "Ver"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-gray-400 italic font-sans text-center py-4">
+                Nenhum versículo encontrado para "{busca}".
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <a
@@ -2568,7 +2749,7 @@ export default function App() {
   useEffect(() => {
     const sanitizarFoto = (foto: string | null) => {
       if (!foto) return FOTO_IGREJA_DEFAULT;
-      if (!foto.startsWith("data:") && !foto.startsWith("http") && !foto.startsWith("https")) {
+      if (!foto.startsWith("data:")) {
         return FOTO_IGREJA_DEFAULT;
       }
       return foto;

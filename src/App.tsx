@@ -844,13 +844,25 @@ function TelaInicio({
           className="relative w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 h-48 shadow-sm cursor-pointer group"
           title="Clique para trocar a foto da igreja"
         >
-          {fotoIgreja ? (
-            <img 
-              src={fotoIgreja} 
-              alt="Igreja Betel" 
-              className="w-full h-full object-cover group-hover:brightness-90 transition-all" 
-              referrerPolicy="no-referrer"
-            />
+          {fotoIgreja && fotoIgreja !== "sem_foto" ? (
+            <>
+              <img 
+                src={fotoIgreja} 
+                alt="Igreja Betel" 
+                className="w-full h-full object-cover group-hover:brightness-90 transition-all" 
+                referrerPolicy="no-referrer"
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTrocarFotoIgreja("sem_foto");
+                }}
+                className="absolute top-3 right-3 bg-red-700 hover:bg-red-800 text-white p-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all z-25 flex items-center justify-center border border-red-600/30"
+                title="Remover foto"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 font-sans text-xs">
               <Camera size={24} className="mb-1 text-gray-400" />
@@ -2749,6 +2761,7 @@ export default function App() {
   useEffect(() => {
     const sanitizarFoto = (foto: string | null) => {
       if (!foto) return FOTO_IGREJA_DEFAULT;
+      if (foto === "sem_foto") return "sem_foto";
       if (!foto.startsWith("data:")) {
         return FOTO_IGREJA_DEFAULT;
       }

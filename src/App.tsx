@@ -58,7 +58,7 @@ import {
 // @ts-ignore
 import FOTO_IGREJA_DEFAULT from "./assets/images/foto_igreja_betel_real_1782324243852.jpg";
 
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 
 /* ======================================================================
@@ -2757,7 +2757,7 @@ export default function App() {
   const [editandoMeuCadastro, setEditandoMeuCadastro] = useState<Membro | null>(null);
   const [confirmarRemoverLocal, setConfirmarRemoverLocal] = useState(false);
 
-  // Carrega os dados salvos e sincroniza periodicamente
+  // Carrega os dados salvos e sincroniza em tempo real
   useEffect(() => {
     const sanitizarFoto = (foto: string | null) => {
       if (!foto) return FOTO_IGREJA_DEFAULT;
@@ -2768,78 +2768,60 @@ export default function App() {
       return foto;
     };
 
-    const buscarSincronizar = async () => {
-      try {
-        const resultado = await window.storage.get(STORAGE_KEY, true);
-        if (resultado && resultado.value) {
-          const parsed = JSON.parse(resultado.value);
-          const remoto: DadosApp = {
-            ...dadosPadrao(),
-            ...parsed,
-            fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
-            grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
-            visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
-            licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
-            membros: Array.isArray(parsed.membros) ? parsed.membros : [],
-          };
-
-          const dadosAtuais = dadosRef.current;
-          const novosMesclados = mesclarTresCaminhos(dadosAtuais, remoto, ultimoEstadoSincronizadoRef.current);
-          
-          if (JSON.stringify(dadosAtuais) !== JSON.stringify(novosMesclados)) {
-            dadosRef.current = novosMesclados;
-            setDados(novosMesclados);
-          }
-          ultimoEstadoSincronizadoRef.current = remoto;
-        }
-      } catch (err) {
-        // Silencioso em caso de erro de rede temporário
-      }
-    };
-
-    // Fluxo inicial de carregamento
+    // Fluxo inicial de carregamento de metadados locais (meu_cadastro_id, visto_membros)
     (async () => {
-      try {
-        const resultado = await window.storage.get(STORAGE_KEY, true);
-        if (resultado && resultado.value) {
-          const parsed = JSON.parse(resultado.value);
-          const carregados: DadosApp = {
-            ...dadosPadrao(),
-            ...parsed,
-            fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
-            grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
-            visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
-            licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
-            membros: Array.isArray(parsed.membros) ? parsed.membros : [],
-          };
-          dadosRef.current = carregados;
-          ultimoEstadoSincronizadoRef.current = carregados;
-          setDados(carregados);
-        }
-      } catch (err) {
-        // Sem dados salvos anteriormente
-      } finally {
-        setCarregado(true);
-      }
       try {
         const visto = await window.storage.get(STORAGE_KEY_VISTO_MEMBROS, false);
         if (visto && visto.value) setUltimaVisualizacaoMembros(Number(visto.value) || 0);
-      } catch (err) {
-        // Sem visto prévio
-      }
+      } catch (err) {}
       try {
         const meuId = await window.storage.get("betel:meu_cadastro_id", false);
         if (meuId && meuId.value) {
           setMeuCadastroId(Number(meuId.value));
         }
-      } catch (err) {
-        // Sem cadastro local anterior
-      }
+      } catch (err) {}
     })();
 
-    // Inicia intervalo de sincronização a cada 8 segundos
-    const intervalo = setInterval(buscarSincronizar, 8000);
-    return () => clearInterval(intervalo);
+    // Listener em tempo real do Firestore para sincronização instantânea de todos os dados do app
+    const desinscrever = onSnapshot(
+      doc(db, "dados_app", STORAGE_KEY),
+      (docSnap) => {
+        try {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data && data.value) {
+              const parsed = JSON.parse(data.value);
+              const remoto: DadosApp = {
+                ...dadosPadrao(),
+                ...parsed,
+                fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
+                grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
+                visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
+                licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
+                membros: Array.isArray(parsed.membros) ? parsed.membros : [],
+              };
+
+              const dadosAtuais = dadosRef.current;
+              const novosMesclados = mesclarTresCaminhos(dadosAtuais, remoto, ultimoEstadoSincronizadoRef.current);
+              
+              dadosRef.current = novosMesclados;
+              ultimoEstadoSincronizadoRef.current = remoto;
+              setDados(novosMesclados);
+            }
+          }
+        } catch (e) {
+          console.error("Erro ao sincronizar dados em tempo real:", e);
+        } finally {
+          setCarregado(true);
+        }
+      },
+      (error) => {
+        console.error("Erro na conexão em tempo real com Firestore:", error);
+        setCarregado(true);
+      }
+    );
+
+    return () => desinscrever();
   }, []);
 
   const persistir = async (novosDados: DadosApp) => {

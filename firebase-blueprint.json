@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "DadosApp": {
+      "title": "Dados do Aplicativo",
+      "description": "Dados do aplicativo incluindo membros, grupos, visitantes, etc.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "String JSON compactada contendo todo o estado dos dados compartilhados"
+        }
+      },
+      "required": ["value"]
+    }
+  },
+  "firestore": {
+    "/dados_app/{documentId}": {
+      "schema": "DadosApp",
+      "description": "Armazena as configurações e dados compartilhados do aplicativo da igreja."
+    }
+  }
+}

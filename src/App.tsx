@@ -395,10 +395,74 @@ function mesclarLista<T extends { id: number }>(
   return resultado;
 }
 
+function normalizarNome(nome: string): string {
+  if (!nome) return "";
+  return nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function normalizarTelefone(tel: string): string {
+  if (!tel) return "";
+  return tel.replace(/[^0-9]/g, "");
+}
+
+function deduplicarMembros(membros: Membro[], meuId: number | null): Membro[] {
+  const resultado: Membro[] = [];
+  
+  membros.forEach((m) => {
+    const nomeNorm = normalizarNome(m.nome);
+    const telNorm = normalizarTelefone(m.telefone);
+    
+    const indexDuplicado = resultado.findIndex((r) => {
+      const rNomeNorm = normalizarNome(r.nome);
+      const rTelNorm = normalizarTelefone(r.telefone);
+      
+      const mesmoNome = nomeNorm && rNomeNorm && nomeNorm === rNomeNorm;
+      const mesmoTel = telNorm && telNorm.length >= 8 && rTelNorm && rTelNorm.length >= 8 && telNorm === rTelNorm;
+      
+      return mesmoNome || mesmoTel;
+    });
+    
+    if (indexDuplicado !== -1) {
+      const existente = resultado[indexDuplicado];
+      let idParaManter = existente.id;
+      if (meuId !== null) {
+        if (m.id === meuId) {
+          idParaManter = m.id;
+        } else if (existente.id === meuId) {
+          idParaManter = existente.id;
+        } else {
+          idParaManter = Math.min(existente.id, m.id);
+        }
+      } else {
+        idParaManter = Math.min(existente.id, m.id);
+      }
+      
+      resultado[indexDuplicado] = {
+        id: idParaManter,
+        nome: m.nome.trim().length > existente.nome.trim().length ? m.nome : existente.nome,
+        telefone: telNorm.length > normalizarTelefone(existente.telefone).length ? m.telefone : existente.telefone,
+        nascimento: m.nascimento || existente.nascimento,
+        dataBatismo: m.dataBatismo || existente.dataBatismo,
+        nomeLider: m.nomeLider || existente.nomeLider,
+        criadoEm: Math.min(m.criadoEm || m.id, existente.criadoEm || existente.id),
+      };
+    } else {
+      resultado.push({ ...m });
+    }
+  });
+  
+  return resultado;
+}
+
 function mesclarTresCaminhos(
   local: DadosApp,
   remoto: DadosApp,
-  base: DadosApp
+  base: DadosApp,
+  meuId: number | null = null
 ): DadosApp {
   const fotoIgreja = mesclarValor(local.fotoIgreja, remoto.fotoIgreja, base.fotoIgreja);
   
@@ -426,7 +490,9 @@ function mesclarTresCaminhos(
 
   const ministrantes = mesclarMinistrantes(local.ministrantes || {}, remoto.ministrantes || {}, base.ministrantes || {});
 
-  const membros = mesclarLista(local.membros || [], remoto.membros || [], base.membros || []).sort(
+  let membrosMesclados = mesclarLista(local.membros || [], remoto.membros || [], base.membros || []);
+  membrosMesclados = deduplicarMembros(membrosMesclados, meuId);
+  const membros = membrosMesclados.sort(
     (a, b) => b.id - a.id
   );
 
@@ -2768,60 +2834,109 @@ export default function App() {
       return foto;
     };
 
-    // Fluxo inicial de carregamento de metadados locais (meu_cadastro_id, visto_membros)
+    let desinscrever: (() => void) | null = null;
+
     (async () => {
+      let carregadoMeuId: number | null = null;
+      try {
+        const meuId = await window.storage.get("betel:meu_cadastro_id", false);
+        if (meuId && meuId.value) {
+          carregadoMeuId = Number(meuId.value);
+          setMeuCadastroId(carregadoMeuId);
+        }
+      } catch (err) {}
+
       try {
         const visto = await window.storage.get(STORAGE_KEY_VISTO_MEMBROS, false);
         if (visto && visto.value) setUltimaVisualizacaoMembros(Number(visto.value) || 0);
       } catch (err) {}
+
+      // 1. Primeiro, carrega os dados locais do backup/cache local com segurança
       try {
-        const meuId = await window.storage.get("betel:meu_cadastro_id", false);
-        if (meuId && meuId.value) {
-          setMeuCadastroId(Number(meuId.value));
+        const resultado = await window.storage.get(STORAGE_KEY, true);
+        if (resultado && resultado.value) {
+          const parsed = JSON.parse(resultado.value);
+          const carregados: DadosApp = {
+            ...dadosPadrao(),
+            ...parsed,
+            fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
+            grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
+            visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
+            licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
+            membros: Array.isArray(parsed.membros) ? parsed.membros : [],
+          };
+          dadosRef.current = carregados;
+          setDados(carregados);
         }
-      } catch (err) {}
-    })();
+      } catch (err) {
+        console.error("Erro ao carregar dados locais iniciais:", err);
+      }
 
-    // Listener em tempo real do Firestore para sincronização instantânea de todos os dados do app
-    const desinscrever = onSnapshot(
-      doc(db, "dados_app", STORAGE_KEY),
-      (docSnap) => {
-        try {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (data && data.value) {
-              const parsed = JSON.parse(data.value);
-              const remoto: DadosApp = {
-                ...dadosPadrao(),
-                ...parsed,
-                fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
-                grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
-                visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
-                licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
-                membros: Array.isArray(parsed.membros) ? parsed.membros : [],
-              };
+      // 2. Só depois de carregar o local, inicia o listener em tempo real para sincronização com Firestore
+      desinscrever = onSnapshot(
+        doc(db, "dados_app", STORAGE_KEY),
+        async (docSnap) => {
+          try {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data && data.value) {
+                const parsed = JSON.parse(data.value);
+                const remoto: DadosApp = {
+                  ...dadosPadrao(),
+                  ...parsed,
+                  fotoIgreja: sanitizarFoto(parsed.fotoIgreja),
+                  grupos: Array.isArray(parsed.grupos) ? parsed.grupos : [],
+                  visitantes: Array.isArray(parsed.visitantes) ? parsed.visitantes : [],
+                  licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
+                  membros: Array.isArray(parsed.membros) ? parsed.membros : [],
+                };
 
+                const dadosAtuais = dadosRef.current;
+                const novosMesclados = mesclarTresCaminhos(dadosAtuais, remoto, ultimoEstadoSincronizadoRef.current, carregadoMeuId);
+                
+                const houveMudancaLocalMesclada = JSON.stringify(remoto) !== JSON.stringify(novosMesclados);
+                
+                dadosRef.current = novosMesclados;
+                ultimoEstadoSincronizadoRef.current = remoto;
+                setDados(novosMesclados);
+
+                if (houveMudancaLocalMesclada) {
+                  try {
+                    await window.storage.set(STORAGE_KEY, JSON.stringify(novosMesclados), true);
+                    ultimoEstadoSincronizadoRef.current = novosMesclados;
+                  } catch (e) {
+                    console.error("Erro ao subir mesclagem inicial para o Firestore:", e);
+                  }
+                }
+              }
+            } else {
+              // Se o documento no Firestore não existir, envia o estado local atual para inicializar a nuvem
               const dadosAtuais = dadosRef.current;
-              const novosMesclados = mesclarTresCaminhos(dadosAtuais, remoto, ultimoEstadoSincronizadoRef.current);
-              
-              dadosRef.current = novosMesclados;
-              ultimoEstadoSincronizadoRef.current = remoto;
-              setDados(novosMesclados);
+              if (dadosAtuais.membros.length > 0 || dadosAtuais.grupos.length > 0 || dadosAtuais.licoes.length > 0) {
+                try {
+                  await window.storage.set(STORAGE_KEY, JSON.stringify(dadosAtuais), true);
+                  ultimoEstadoSincronizadoRef.current = dadosAtuais;
+                } catch (e) {
+                  console.error("Erro ao inicializar documento vazio no Firestore:", e);
+                }
+              }
             }
+          } catch (e) {
+            console.error("Erro ao sincronizar dados em tempo real:", e);
+          } finally {
+            setCarregado(true);
           }
-        } catch (e) {
-          console.error("Erro ao sincronizar dados em tempo real:", e);
-        } finally {
+        },
+        (error) => {
+          console.error("Erro na conexão em tempo real com Firestore:", error);
           setCarregado(true);
         }
-      },
-      (error) => {
-        console.error("Erro na conexão em tempo real com Firestore:", error);
-        setCarregado(true);
-      }
-    );
+      );
+    })();
 
-    return () => desinscrever();
+    return () => {
+      if (desinscrever) desinscrever();
+    };
   }, []);
 
   const persistir = async (novosDados: DadosApp) => {
@@ -2841,7 +2956,7 @@ export default function App() {
           licoes: Array.isArray(parsed.licoes) ? parsed.licoes : [],
           membros: Array.isArray(parsed.membros) ? parsed.membros : [],
         };
-        dadosFinais = mesclarTresCaminhos(novosDados, remoto, ultimoEstadoSincronizadoRef.current);
+        dadosFinais = mesclarTresCaminhos(novosDados, remoto, ultimoEstadoSincronizadoRef.current, meuCadastroId);
       }
 
       // 2. Atualiza o estado local e de referência
